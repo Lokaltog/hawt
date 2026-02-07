@@ -99,6 +99,11 @@ function __hawt_cc_run --description "Execute CC session with lock and sandbox"
         set -a bwrap_cmd --dangerously-skip-permissions
     end
 
+    # Pass task as initial prompt so CC starts working immediately
+    if test -n "$task"
+        set -a bwrap_cmd "Read TASK.md and complete the task described in it."
+    end
+
     if test $dry_run -eq 1
         echo ""
         echo (set_color --bold)"Dry run - would execute:"(set_color normal)
