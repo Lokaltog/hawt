@@ -149,6 +149,7 @@ $diff_content"
         if test -d "$hawt_path"
             # cd to main repo first in case we're inside the worktree being removed
             cd "$root"
+            __hawt_announce_path "Returned to main repo: $root"
             git worktree remove "$hawt_path" 2>/dev/null
             or git worktree remove --force "$hawt_path" 2>/dev/null
             echo (set_color green)"✓ Removed worktree"(set_color normal)

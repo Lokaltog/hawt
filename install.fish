@@ -7,26 +7,38 @@ set -l fish_comp_dir "$HOME/.config/fish/completions"
 
 mkdir -p "$fish_func_dir" "$fish_comp_dir"
 
+# Install main entry point
+set -l main_src (realpath "$script_dir/hawt.fish")
+set -l main_target "$fish_func_dir/hawt.fish"
+if test -L "$main_target" -o -f "$main_target"
+    echo (set_color yellow)"Replacing: $main_src -> $main_target"(set_color normal)
+else
+    echo (set_color green)"Installing: $main_src -> $main_target"(set_color normal)
+end
+ln -sf "$main_src" "$main_target"
+
 # Install function files
 for f in $script_dir/functions/*.fish
+    set -l src (realpath "$f")
     set -l target "$fish_func_dir/"(basename "$f")
     if test -L "$target" -o -f "$target"
-        echo (set_color yellow)"Replacing: "(basename "$f")(set_color normal)
+        echo (set_color yellow)"Replacing: $src -> $target"(set_color normal)
     else
-        echo (set_color green)"Installing: "(basename "$f")(set_color normal)
+        echo (set_color green)"Installing: $src -> $target"(set_color normal)
     end
-    ln -sf (realpath "$f") "$target"
+    ln -sf "$src" "$target"
 end
 
 # Install completions
 for f in $script_dir/completions/*.fish
+    set -l src (realpath "$f")
     set -l target "$fish_comp_dir/"(basename "$f")
     if test -L "$target" -o -f "$target"
-        echo (set_color yellow)"Replacing: "(basename "$f")(set_color normal)
+        echo (set_color yellow)"Replacing: $src -> $target"(set_color normal)
     else
-        echo (set_color green)"Installing: "(basename "$f")(set_color normal)
+        echo (set_color green)"Installing: $src -> $target"(set_color normal)
     end
-    ln -sf (realpath "$f") "$target"
+    ln -sf "$src" "$target"
 end
 
 echo ""

@@ -164,6 +164,7 @@ function __hawt_cc_run --description "Execute CC session with lock and sandbox"
     else
         echo (set_color yellow)"CC exited with code $cc_exit. Changes preserved."(set_color normal)
     end
+    __hawt_announce_path "Your shell is in: $PWD"
 
     return $cc_exit
 end

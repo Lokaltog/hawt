@@ -78,6 +78,7 @@ function __hawt_pick --description "Interactive fzf worktree picker"
     if test -n "$selected"
         set -l target (echo "$selected" | cut -f1)
         cd "$target"
+        __hawt_announce_path "Switched to: $target"
     end
 end
 
@@ -93,8 +94,8 @@ function __hawt_upsert --description "Create or switch to a named worktree"
 
     # Check if worktree already exists
     if test -d "$hawt_path"
-        echo (set_color green)"↪ Worktree '$name' exists, switching..."(set_color normal)
         cd "$hawt_path"
+        __hawt_announce_path "Switched to worktree: $hawt_path"
         return 0
     end
 
@@ -128,8 +129,9 @@ function __hawt_upsert --description "Create or switch to a named worktree"
     # Run post-create hook
     __hawt_run_hook "$root" "$hawt_path" post-create
 
-    echo (set_color green)"✓ Worktree '$name' ready at $hawt_path"(set_color normal)
+    echo (set_color green)"✓ Worktree '$name' ready"(set_color normal)
     cd "$hawt_path"
+    __hawt_announce_path "Now in: $hawt_path"
 end
 
 function __hawt_status --description "Overview table of all worktrees"
@@ -272,9 +274,10 @@ function __hawt_tmp --description "Create an ephemeral worktree in /tmp"
     # Tag this as ephemeral so the leave hook can auto-clean
     echo "$tmp_path" >>"$root/.git/hawt-ephemeral"
 
-    echo (set_color green)"✓ Ephemeral worktree at $tmp_path"(set_color normal)
+    echo (set_color green)"✓ Ephemeral worktree ready"(set_color normal)
     echo (set_color brblack)"  Will be cleaned up on hawt clean or leave"(set_color normal)
     cd "$tmp_path"
+    __hawt_announce_path "Now in: $tmp_path"
 end
 
 function __hawt_remove --description "Remove a worktree"
