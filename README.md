@@ -4,6 +4,46 @@ AI agents are great until two of them edit the same file, or one of them decides
 
 `hawt` gives each agent its own worktree and locks it in a sandbox. You review the work. You decide what ships.
 
+## Background
+
+The Claude Code docs describe a [manual workflow for running parallel sessions with git worktrees](https://code.claude.com/docs/en/common-workflows#run-parallel-claude-code-sessions-with-git-worktrees): create worktrees by hand, `cd` into each one, run `claude`, remember to set up your dev environment, and clean up when done.
+
+`hawt` implements this entire workflow as a single command - and adds the parts the manual approach can't cover:
+
+| Manual workflow                                          | `hawt`                                                             |
+| -------------------------------------------------------- | ------------------------------------------------------------------ |
+| `git worktree add ../project-feature -b feature`         | `hawt cc feature`                                                  |
+| `cd` into worktree, run `claude`                         | Handled automatically                                              |
+| Manually install deps / set up environment               | Smart bootstrap via `.worktreerc` or auto-detection                |
+| Trust that agents won't touch other worktrees or `/home` | bwrap sandbox: read-only root, `.env` nullification, PID isolation |
+| Open multiple terminals for parallel sessions            | `hawt batch tasks.hawt -j 4`                                       |
+| `git worktree list` / `git worktree remove`              | `hawt ps`, `hawt review`, `hawt merge`, `hawt clean`               |
+
+### Why not `--dangerously-skip-permissions` alone?
+
+Claude Code's `--dangerously-skip-permissions` flag enables fully autonomous operation - no permission prompts, no human-in-the-loop. Without a sandbox, this means unrestricted access to your entire filesystem, network, and running processes. You're trusting the model not to `rm -rf /home` or exfiltrate your SSH keys.
+
+`hawt` makes autonomous mode safe by combining it with a bwrap sandbox. In worktree mode, `hawt cc <name>` passes `--dangerously-skip-permissions` automatically - but Claude runs inside a locked-down namespace where the root filesystem is read-only, `/home` is a tmpfs, `.env` files are nullified, and the only writable directory is the worktree copy. The agent has full autonomy _within_ a space where the blast radius is zero.
+
+**Permissions bypass is only enabled in worktree mode.** Running `hawt cc` without a worktree name sandboxes your current repo but does _not_ pass `--dangerously-skip-permissions`. This is intentional - without a worktree, the sandbox protects a live copy of your repo, so interactive permission prompts remain the appropriate safeguard. The autonomous bypass is reserved for disposable worktree copies where the worst case is deleting work you haven't merged yet.
+
+### Why not Claude Code's built-in sandbox?
+
+Claude Code ships its own bwrap-based sandbox, but it's designed as an opaque safety net rather than a configurable isolation layer:
+
+| Concern                                     | CC built-in sandbox                             | `hawt` sandbox                                                       |
+| ------------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------- |
+| Transparency                                | Opaque - no way to inspect the bwrap invocation | `--dry-run` prints the exact bwrap command                           |
+| Configurability                             | Not configurable                                | `.worktreerc` directives, CLI flags, env vars                        |
+| Home directory                              | Accessible                                      | tmpfs over `/home` with selective re-binds (shell, git, SSH, GPG)    |
+| `.env` / secrets                            | Accessible                                      | Nullified by default (`/dev/null` overlay), opt-in via `--allow-env` |
+| Extra mounts                                | Not supported                                   | `bwrap-bind-ro:`, `bwrap-bind-rw:`, `bwrap-tmpfs:` in `.worktreerc`  |
+| Network isolation                           | Not supported                                   | `--offline` (`--unshare-net`)                                        |
+| Path remapping                              | Not supported                                   | Worktree remapped to `/home/code/<name>` by default                  |
+| Works with `--dangerously-skip-permissions` | Disabled when skip-permissions is active        | Designed for it - sandbox _is_ the permission boundary               |
+
+The key limitation: CC's built-in sandbox is mutually exclusive with `--dangerously-skip-permissions`. When you enable autonomous mode, the built-in sandbox turns off. `hawt` inverts this - the sandbox is the reason you _can_ skip permissions safely.
+
 ## Try Without Installing
 
 ```fish
@@ -47,9 +87,9 @@ hawt cc hotfix-login --from release/2.0 --task "Fix OAuth callback URL"
 hawt ps
 
 # when a session finishes, review what it did
-hawt review auth-flow            # commits, stats, session log
-hawt diff auth-flow              # full diff against main
-hawt diff auth-flow --stat       # quick overview
+hawt review auth-flow # commits, stats, session log
+hawt diff auth-flow # full diff against main
+hawt diff auth-flow --stat # quick overview
 
 # happy with it? merge back to main (squash by default)
 hawt merge auth-flow
@@ -65,49 +105,49 @@ hawt clean
 
 ### Worktree Management
 
-| Command | Description |
-| --- | --- |
-| `hawt` | Interactive fzf picker - browse/switch worktrees (`ctrl-d` to remove, git log preview) |
-| `hawt <name> [--from <ref>]` | Create or switch to a named worktree (auto-stashes uncommitted changes) |
-| `hawt status` | Table view: branch, dirty state, ahead/behind, age |
-| `hawt tmp [name]` | Ephemeral worktree in `/tmp` - auto-cleaned when you `cd` out or run `hawt clean` |
-| `hawt rm <name>` | Remove a worktree (warns if dirty, confirms before force) |
-| `hawt clean` | Prune stale git refs + find orphaned worktree directories |
+| Command                      | Description                                                                            |
+| ---------------------------- | -------------------------------------------------------------------------------------- |
+| `hawt`                       | Interactive fzf picker - browse/switch worktrees (`ctrl-d` to remove, git log preview) |
+| `hawt <name> [--from <ref>]` | Create or switch to a named worktree (auto-stashes uncommitted changes)                |
+| `hawt status`                | Table view: branch, dirty state, ahead/behind, age                                     |
+| `hawt tmp [name]`            | Ephemeral worktree in `/tmp` - auto-cleaned when you `cd` out or run `hawt clean`      |
+| `hawt rm <name>`             | Remove a worktree (warns if dirty, confirms before force)                              |
+| `hawt clean`                 | Prune stale git refs + find orphaned worktree directories                              |
 
 ### Claude Code Integration
 
-| Command | Description |
-| --- | --- |
-| `hawt cc` | Run Claude Code in a sandbox using the current directory as workspace |
-| `hawt cc <name>` | Create/reuse worktree, run CC in sandbox inside it |
-| `hawt cc <name> --from <ref>` | Branch worktree from a specific ref |
-| `hawt cc <name> --task "..."` | Write task description to TASK.md before launching |
-| `hawt cc --offline` | Disable network inside the sandbox |
-| `hawt cc --dry-run` | Print the bwrap command without executing |
+| Command                       | Description                                                           |
+| ----------------------------- | --------------------------------------------------------------------- |
+| `hawt cc`                     | Run Claude Code in a sandbox using the current directory as workspace |
+| `hawt cc <name>`              | Create/reuse worktree, run CC in sandbox inside it                    |
+| `hawt cc <name> --from <ref>` | Branch worktree from a specific ref                                   |
+| `hawt cc <name> --task "..."` | Write task description to TASK.md before launching                    |
+| `hawt cc --offline`           | Disable network inside the sandbox                                    |
+| `hawt cc --dry-run`           | Print the bwrap command without executing                             |
 
 ### Batch & Session Management
 
-| Command | Description |
-| --- | --- |
-| `hawt batch <taskfile> [-j N]` | Launch parallel CC sessions from a taskfile |
-| `hawt ps` | Show running CC sessions: PID, uptime, branch, lock state |
-| `hawt kill <name>` | Terminate a CC session and clean up |
-| `hawt lock <name>` | Manually lock a worktree |
-| `hawt unlock <name>` | Manually unlock a worktree (warns if owner PID is alive) |
+| Command                        | Description                                               |
+| ------------------------------ | --------------------------------------------------------- |
+| `hawt batch <taskfile> [-j N]` | Launch parallel CC sessions from a taskfile               |
+| `hawt ps`                      | Show running CC sessions: PID, uptime, branch, lock state |
+| `hawt kill <name>`             | Terminate a CC session and clean up                       |
+| `hawt lock <name>`             | Manually lock a worktree                                  |
+| `hawt unlock <name>`           | Manually unlock a worktree (warns if owner PID is alive)  |
 
 ### Review & Merge
 
-| Command | Description |
-| --- | --- |
-| `hawt diff <name> [--files\|--stat]` | Review changes in a worktree branch |
-| `hawt review <name> [--ai] [--test]` | Post-session review: commits, stats, logs, optional AI summary |
-| `hawt merge <name> [--squash\|--rebase\|--merge]` | Merge worktree branch back (default: squash) |
-| `hawt checkpoint <name> [message]` | Commit current worktree state from outside |
+| Command                                           | Description                                                    |
+| ------------------------------------------------- | -------------------------------------------------------------- |
+| `hawt diff <name> [--files\|--stat]`              | Review changes in a worktree branch                            |
+| `hawt review <name> [--ai] [--test]`              | Post-session review: commits, stats, logs, optional AI summary |
+| `hawt merge <name> [--squash\|--rebase\|--merge]` | Merge worktree branch back (default: squash)                   |
+| `hawt checkpoint <name> [message]`                | Commit current worktree state from outside                     |
 
 ### Generic Sandbox
 
-| Command | Description |
-| --- | --- |
+| Command                        | Description                        |
+| ------------------------------ | ---------------------------------- |
 | `hawt sandbox [opts] -- <cmd>` | Run any command in a bwrap sandbox |
 
 Sandbox options: `--offline`, `--no-remap`, `--allow-env`, `--mount-ro <path>`, `--mount-rw <path>`, `--dry-run`
@@ -185,17 +225,56 @@ If no config is found, `hawt` detects your project type and applies sensible def
 
 **Nix:** symlinks `.direnv`
 
-## Sandbox Isolation
+## Security
 
-The bwrap sandbox provides:
+### Sandbox isolation
+
+Every `hawt cc` and `hawt sandbox` invocation runs inside a bwrap (bubblewrap) namespace:
 
 - **Read-only root filesystem** - the agent can't modify the host
 - **Isolated home directory** - tmpfs over `/home`, selective re-bind of shell config, git, SSH agent, GPG agent
 - **Writable project only** - the worktree (or repo) is the sole writable workspace
 - **Path remapping** - worktree is remapped to `/home/code/<name>` so agents see a clean path
 - **.env nullification** - `.env*` files are overlaid with `/dev/null` by default
-- **Optional network isolation** - `--offline` drops all network access
+- **PID namespace** - `--unshare-pid` prevents the agent from seeing or signaling host processes
+- **Orphan cleanup** - `--die-with-parent` ensures the sandbox dies if the parent process exits
+- **Optional network isolation** - `--offline` drops all network access via `--unshare-net`
 - **Extensible** - `.worktreerc` can declare extra `bwrap-bind-ro:`, `bwrap-bind-rw:`, `bwrap-tmpfs:` directives
+
+### Autonomous mode safety
+
+`--dangerously-skip-permissions` is **only** passed to Claude Code in worktree mode (`hawt cc <name>`), where the agent operates on a disposable copy of your repo. Running `hawt cc` without a name sandboxes your current repo directly and does _not_ bypass permissions - you keep interactive prompts because the sandbox protects a live working copy, not a throwaway branch.
+
+This is a deliberate safety boundary: autonomous mode is restricted to contexts where the worst outcome is losing unmerged worktree changes.
+
+### Selective home re-binds
+
+The sandbox doesn't blanket-expose your home directory. Instead, it re-binds only what's needed:
+
+| Mounted (read-only)               | Why                                      |
+| --------------------------------- | ---------------------------------------- |
+| Fish config, git config           | Shell/git must work inside the sandbox   |
+| SSH agent socket + `known_hosts`  | Git push/pull over SSH (no private keys) |
+| GPG agent socket + public keyring | Commit signing (no secret keys)          |
+| `gh` CLI config                   | GitHub API access                        |
+| `mise`, `cargo`, `rustup`         | Runtime/toolchain resolution             |
+| `~/.npmrc`                        | Registry auth for package installs       |
+
+Everything else under `/home` is a tmpfs - invisible to the agent.
+
+### .worktreerc mount blocklist
+
+Custom bwrap directives in `.worktreerc` (`bwrap-bind-ro:`, `bwrap-bind-rw:`, `bwrap-tmpfs:`) are validated against a blocklist of system paths: `/`, `/proc`, `/dev`, `/sys`, `/etc`, `/usr`, `/bin`, `/sbin`, `/lib`, `/lib64`, `/boot`, `/var`, `/root`, `/run`, `/home`. Paths are resolved through symlinks before checking, so symlink-based bypass attempts (e.g., `/tmp/evil` -> `/etc`) are caught.
+
+### Trust-on-first-use (TOFU)
+
+`.worktreerc` post-create commands and `.worktree-hooks/` scripts can execute arbitrary code. Before running them for the first time, `hawt` computes a SHA-256 hash of the file and prompts for confirmation. Approved hashes are stored as `hash:filepath` entries in `.hawt-trusted` (per-repo). If the file changes, the hash won't match and approval is required again.
+
+This follows the same model as direnv's `.envrc` trust mechanism.
+
+### Concurrency locking
+
+Worktree sessions are protected by `flock(1)` kernel-managed locks (`.hawt-lock` files). Locks auto-release on process death - no stale lock cleanup needed. `--close` prevents the lock fd from leaking into the bwrap child, so the lock is held by `flock` itself, not the sandboxed process.
 
 ## Batch Mode
 
