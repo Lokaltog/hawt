@@ -328,51 +328,57 @@ end
 
 function __hawt_help --description "Show help"
     echo ""
-    echo (set_color --bold)"hawt - Git Worktree Helper"(set_color normal)
+    echo (set_color --bold cyan)"  ╻ ╻┏━┓╻ ╻╺┳╸"(set_color normal)
+    echo (set_color --bold cyan)"  ┣━┫┣━┫┃╻┃ ┃ "(set_color normal)"  git worktree helper"
+    echo (set_color --bold cyan)"  ╹ ╹╹ ╹┗┻┛ ╹ "(set_color normal)"  for sandboxed AI agents"
     echo ""
-    echo (set_color --bold)"Worktrees:"(set_color normal)
-    echo "  hawt                              Interactive fzf picker"
+    echo (set_color brblack)"  AI agents are great until two of them edit the same file."(set_color normal)
+    echo (set_color brblack)"  hawt gives each agent its own worktree and locks it in a sandbox."(set_color normal)
+    echo ""
+    echo (set_color --bold yellow)"  WORKTREE MANAGEMENT "(set_color brblack)(string repeat -n 39 "─")(set_color normal)
+    echo ""
+    echo "  hawt                              Interactive fzf picker "(set_color brblack)"(ctrl-d to remove)"(set_color normal)
     echo "  hawt <name> [--from <ref>]        Create or switch to a named worktree"
-    echo "  hawt status                       Overview table of all worktrees"
-    echo "  hawt tmp [name]                   Ephemeral worktree in /tmp"
+    echo "  hawt status                       Table view: branch, dirty state, sync, age"
+    echo "  hawt tmp [name]                   Ephemeral worktree in /tmp "(set_color brblack)"(auto-cleaned)"(set_color normal)
     echo "  hawt rm <name>                    Remove a worktree"
-    echo "  hawt clean                        Prune stale refs and orphans"
+    echo "  hawt clean                        Prune stale refs and orphaned directories"
     echo ""
-    echo (set_color --bold)"Claude Code:"(set_color normal)
+    echo (set_color --bold yellow)"  CLAUDE CODE INTEGRATION "(set_color brblack)(string repeat -n 35 "─")(set_color normal)
+    echo ""
     echo "  hawt cc                           Run CC in sandbox on current repo"
     echo "  hawt cc <name> [--from <ref>]     Run CC in sandboxed worktree"
-    echo "    --task \"...\"                     Write task to TASK.md"
-    echo "    --offline                        Disable network"
+    echo "    --task \"...\"                     Write task to TASK.md before launching"
+    echo "    --offline                        Disable network inside sandbox"
     echo "    --dry-run                        Print bwrap command only"
     echo ""
-    echo (set_color --bold)"Sessions:"(set_color normal)
-    echo "  hawt batch <taskfile> [-j N]      Launch parallel CC sessions (-j/--max-parallel)"
-    echo "  hawt ps                           Show running sessions"
-    echo "  hawt kill <name>                  Terminate a session"
+    echo (set_color --bold yellow)"  BATCH & SESSION MANAGEMENT "(set_color brblack)(string repeat -n 32 "─")(set_color normal)
+    echo ""
+    echo "  hawt batch <taskfile> [-j N]      Launch parallel CC sessions from taskfile"
+    echo "  hawt ps                           Show running sessions: PID, uptime, branch"
+    echo "  hawt kill <name>                  Terminate a session and clean up"
     echo "  hawt lock <name>                  Manually lock a worktree"
     echo "  hawt unlock <name>                Manually unlock a worktree"
     echo ""
-    echo (set_color --bold)"Review & Merge:"(set_color normal)
+    echo (set_color --bold yellow)"  REVIEW & MERGE "(set_color brblack)(string repeat -n 43 "─")(set_color normal)
+    echo ""
     echo "  hawt diff <name> [--files|--stat] Review worktree changes"
-    echo "  hawt review <name> [--ai] [--test] Post-session review"
-    echo "  hawt merge <name> [--squash|...]  Merge worktree branch back"
+    echo "  hawt review <name> [--ai] [--test] Post-session review: commits, stats, logs"
+    echo "  hawt merge <name> [--squash|...]  Merge worktree branch back "(set_color brblack)"(default: squash)"(set_color normal)
     echo "  hawt checkpoint <name> [msg]      Commit worktree state from outside"
     echo ""
-    echo (set_color --bold)"Sandbox:"(set_color normal)
-    echo "  hawt sandbox [opts] -- <cmd>      Run any command in bwrap sandbox"
+    echo (set_color --bold yellow)"  SANDBOX "(set_color brblack)(string repeat -n 51 "─")(set_color normal)
     echo ""
-    echo (set_color --bold)"Shell:"(set_color normal)
-    echo "  hawt unload                       Unload hawt from current shell"
-    echo "  hawt reload                       Reload hawt (pick up code changes)"
+    echo "  hawt sandbox [opts] -- <cmd>      Run any command in a bwrap sandbox"
+    echo (set_color brblack)"    --offline  --no-remap  --allow-env  --mount-ro  --mount-rw  --dry-run"(set_color normal)
     echo ""
-    echo (set_color --bold)"Config:"(set_color normal)
-    echo "  .worktreerc                       Bootstrap config (symlink/copy/post-create)"
-    echo "  .worktree-hooks/post-create       Hook: runs after worktree creation"
-    echo "  .worktree-hooks/on-leave          Hook: runs when leaving a worktree"
+    echo (set_color --bold yellow)"  CONFIGURATION "(set_color brblack)(string repeat -n 44 "─")(set_color normal)
     echo ""
-    echo (set_color --bold)"Worktree Location:"(set_color normal)
-    echo "  Default: ../<repo>-worktrees/<name>"
-    echo "  Override with worktree-dir: <path> in .worktreerc"
-    echo "  Or set HAWT_WORKTREE_DIR env var (takes precedence)"
+    echo "  .worktreerc                       Bootstrap config "(set_color brblack)"(symlinks, copies, hooks)"(set_color normal)
+    echo "  .worktree-hooks/post-create       Runs after worktree creation"
+    echo "  .worktree-hooks/on-leave          Runs when leaving a worktree"
+    echo "  tasks.hawt                        Batch task definitions "(set_color brblack)"(name: description)"(set_color normal)
+    echo ""
+    echo (set_color brblack)"  Worktrees: ../<repo>-worktrees/<name> "(set_color normal)"(override: .worktreerc or HAWT_WORKTREE_DIR)"
     echo ""
 end

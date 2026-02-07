@@ -42,9 +42,9 @@ __hawt_do_reload
 @test "__hawt_help exists after reload" (functions -q __hawt_help) $status -eq 0
 @test "__hawt_cc exists after reload" (functions -q __hawt_cc) $status -eq 0
 
-@echo "--- help mentions unload/reload ---"
+@echo "--- help does not mention unload/reload ---"
 
 set -g HELP (__hawt_help)
 
-@test "help mentions unload" (string match -q "*hawt unload*" "$HELP") $status -eq 0
-@test "help mentions reload" (string match -q "*hawt reload*" "$HELP") $status -eq 0
+@test "help does not mention unload" (not string match -q "*hawt unload*" "$HELP") $status -eq 0
+@test "help does not mention reload" (not string match -q "*hawt reload*" "$HELP") $status -eq 0
