@@ -276,6 +276,28 @@ This follows the same model as direnv's `.envrc` trust mechanism.
 
 Worktree sessions are protected by `flock(1)` kernel-managed locks (`.hawt-lock` files). Locks auto-release on process death - no stale lock cleanup needed. `--close` prevents the lock fd from leaking into the bwrap child, so the lock is held by `flock` itself, not the sandboxed process.
 
+## Don't Trust This README
+
+Everything above describes what `hawt` _claims_ to do. You should not take our word for it (or anyone else's) when it comes to tools that give system access to an LLM.
+
+Drop into a sandbox yourself and poke around:
+
+```fish
+hawt sandbox -- fish
+```
+
+Try reading `/home`. Try writing outside the worktree. Try accessing `.env` files. Try killing host processes. Anything you can (and can't) do in there applies to agents as well.
+
+Inspect the exact bwrap invocation with:
+
+```fish
+hawt sandbox --dry-run -- fish
+```
+
+This prints every mount, namespace flag, and bind path — nothing is hidden. Read it. Understand what's mounted read-only, what's writable, what's a tmpfs, and what's not there at all.
+
+**This applies to every tool in this space, not just `hawt`.** Any project that wraps an LLM with filesystem or shell access deserves the same scrutiny. The cost of verifying is a few minutes in a shell. The cost of blind trust is your SSH keys, your `.env` secrets, and whatever else lives under `/home`.
+
 ## Batch Mode
 
 Define tasks in a file (one per line, `name: description`):
