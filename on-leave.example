@@ -1,0 +1,20 @@
+#!/usr/bin/env fish
+# .worktree-hooks/on-leave
+#
+# Runs when you cd out of a worktree directory.
+# cwd is the worktree you just left.
+#
+# Examples:
+#   - Stop dev servers
+#   - Save session state
+#   - Run cleanup tasks
+
+echo (set_color brblack)"👋 Left worktree: "(basename (pwd))(set_color normal)
+
+# Example: kill any running dev servers for this worktree
+# set -l port_file .dev-port
+# if test -f $port_file
+#     set -l port (cat $port_file)
+#     kill (lsof -ti:$port) 2>/dev/null
+#     echo "  Stopped dev server on port $port"
+# end

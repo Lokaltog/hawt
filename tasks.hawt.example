@@ -1,0 +1,11 @@
+# tasks.hawt — Example taskfile for hawt batch
+#
+# Format: worktree-name: Task description for Claude Code
+# Lines starting with # are comments, blank lines are ignored.
+#
+# Usage: hawt batch tasks.hawt --from main
+
+feature-auth: Implement OAuth2 flow for the /auth endpoints using the existing session middleware
+fix-perf: Profile and fix the slow query in UserService.getAll — add database indexes and query optimization
+refactor-types: Extract shared TypeScript types into a @repo/types package with proper exports
+add-tests: Write comprehensive unit tests for the payment processing module, targeting 90% coverage

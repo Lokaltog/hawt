@@ -1,0 +1,51 @@
+# .worktreerc — Git worktree bootstrap + sandbox configuration
+#
+# Place this in your repo root. Without this file, heuristics are applied
+# for TS/Node, Python, and Nix projects.
+#
+# Format:
+#   symlink: <path>            Symlink from main repo (shared, saves disk)
+#   copy: <path>               Copy from main repo (independent per worktree)
+#   post-create: <cmd>         Run after worktree creation (cwd = worktree)
+#   test-cmd: <cmd>            Test command for `hawt review --test`
+#   bwrap-bind-ro: <path>      Read-only bind mount in sandbox
+#   bwrap-bind-rw: <path>      Read-write bind mount in sandbox
+#   bwrap-tmpfs: <path>        Tmpfs mount in sandbox
+
+# ── Dependencies ─────────────────────────────────────────────────────────
+symlink: node_modules
+
+# ── Monorepo nested deps ────────────────────────────────────────────────
+# symlink: packages/core/node_modules
+# symlink: packages/web/node_modules
+
+# ── Build caches ─────────────────────────────────────────────────────────
+# symlink: .next
+# symlink: .turbo
+# symlink: dist
+
+# ── Environment (copied — each worktree may diverge) ────────────────────
+copy: .env
+copy: .env.local
+
+# ── Post-create hooks ───────────────────────────────────────────────────
+# post-create: npx prisma generate
+# post-create: make setup
+
+# ── Test command (used by `hawt review --test`) ────────────────────────────
+# test-cmd: npm test
+# test-cmd: python -m pytest -x
+
+# ── Bwrap sandbox configuration ─────────────────────────────────────────
+# CC auth/config (read-only — sandbox can read but not modify)
+bwrap-bind-ro: ~/.config/claude-code
+bwrap-bind-ro: ~/.local/share/claude-code
+bwrap-bind-ro: ~/.claude
+bwrap-bind-ro: ~/.config/claude
+
+# Allow npm/pnpm cache (read-write for installs inside sandbox)
+# bwrap-bind-rw: ~/.cache/pnpm
+# bwrap-bind-rw: ~/.npm
+
+# Scratch space
+# bwrap-tmpfs: /tmp
