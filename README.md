@@ -114,15 +114,37 @@ Sandbox options: `--offline`, `--no-remap`, `--allow-env`, `--mount-ro <path>`, 
 
 ## Worktree Layout
 
-Worktrees are created adjacent to your repo, keeping the project directory clean:
+By default, worktrees are created adjacent to your repo, keeping the project directory clean:
 
 ```
 ~/projects/
 ├── my-app/                    ← main repo
-└── my-app-worktrees/          ← worktrees live here
+└── my-app-worktrees/          ← worktrees live here (default)
     ├── feature-auth/
     └── bugfix-header/
 ```
+
+### Custom Worktree Location
+
+Override the default with `worktree-dir:` in `.worktreerc` (per-repo) or `HAWT_WORKTREE_DIR` env var (global):
+
+```
+# .worktreerc — relative to repo root
+worktree-dir: ../my-worktrees
+
+# .worktreerc — absolute path
+worktree-dir: /tmp/worktrees/my-app
+
+# .worktreerc — inside the repo
+worktree-dir: .worktrees
+```
+
+```fish
+# Environment variable (overrides .worktreerc)
+set -x HAWT_WORKTREE_DIR /data/worktrees/my-app
+```
+
+Precedence: `HAWT_WORKTREE_DIR` > `worktree-dir:` in `.worktreerc` > default (`../<repo>-worktrees/`)
 
 ## Smart Bootstrap
 
@@ -133,6 +155,9 @@ When creating a worktree, `hawt` automatically symlinks or copies files to make 
 Place a `.worktreerc` in your repo root for declarative control:
 
 ```
+# Custom worktree location (default: ../<repo>-worktrees/)
+worktree-dir: ../my-worktrees
+
 # Symlink (shared with main repo, saves disk)
 symlink: node_modules
 symlink: .next

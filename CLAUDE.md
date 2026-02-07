@@ -21,14 +21,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Lifecycle hooks** - `.worktree-hooks/post-create` and `.worktree-hooks/on-leave` run at worktree boundaries
 - **PWD watcher** - `__hawt_on_pwd_change` fires hooks and cleans ephemeral worktrees when leaving a worktree directory
 
-**Worktree layout:**
+**Worktree layout (default, configurable via `worktree-dir:` in `.worktreerc` or `HAWT_WORKTREE_DIR` env var):**
 
 - Main repo: `/path/to/my-app/`
-- Worktrees: `/path/to/my-app-worktrees/<name>/`
+- Worktrees: `/path/to/my-app-worktrees/<name>/` (default)
 
 **Configuration files (in user's repo):**
 
-- `.worktreerc` - bootstrap config defining symlinks, copies, and post-create commands
+- `.worktreerc` - bootstrap config defining symlinks, copies, post-create commands, and worktree location
 - `.worktree-hooks/` - lifecycle hook scripts
 - `tasks.hawt` - batch task definitions (`name: description` per line)
 

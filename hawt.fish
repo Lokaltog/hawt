@@ -370,6 +370,9 @@ function __hawt_help --description "Show help"
     echo "  .worktree-hooks/post-create       Hook: runs after worktree creation"
     echo "  .worktree-hooks/on-leave          Hook: runs when leaving a worktree"
     echo ""
-    echo "  Worktrees are created in ../<repo>-worktrees/<name>"
+    echo (set_color --bold)"Worktree Location:"(set_color normal)
+    echo "  Default: ../<repo>-worktrees/<name>"
+    echo "  Override with worktree-dir: <path> in .worktreerc"
+    echo "  Or set HAWT_WORKTREE_DIR env var (takes precedence)"
     echo ""
 end

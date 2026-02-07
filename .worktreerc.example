@@ -4,6 +4,7 @@
 # for TS/Node, Python, and Nix projects.
 #
 # Format:
+#   worktree-dir: <path>       Worktree base directory (absolute or relative to repo root)
 #   symlink: <path>            Symlink from main repo (shared, saves disk)
 #   copy: <path>               Copy from main repo (independent per worktree)
 #   post-create: <cmd>         Run after worktree creation (cwd = worktree)
@@ -11,6 +12,13 @@
 #   bwrap-bind-ro: <path>      Read-only bind mount in sandbox
 #   bwrap-bind-rw: <path>      Read-write bind mount in sandbox
 #   bwrap-tmpfs: <path>        Tmpfs mount in sandbox
+
+# ── Worktree location ────────────────────────────────────────────────────
+# Override where worktrees are created (default: ../<repo>-worktrees/)
+# Absolute path or relative to repo root. Can also set HAWT_WORKTREE_DIR env var.
+# worktree-dir: ../my-worktrees
+# worktree-dir: /tmp/worktrees/my-app
+# worktree-dir: .worktrees
 
 # ── Dependencies ─────────────────────────────────────────────────────────
 symlink: node_modules

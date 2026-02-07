@@ -14,7 +14,7 @@ function __hawt_complete_base --description "Resolve worktree base directory"
             set root (string replace "/.git" "" "$resolved")
         end
     end
-    echo (dirname "$root")/(basename "$root")-worktrees
+    __hawt_worktree_base "$root"
 end
 
 function __hawt_complete_worktrees --description "List worktrees with branch names"
