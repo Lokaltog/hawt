@@ -82,6 +82,7 @@ set -l _hawt_subcmds \
     review:__hawt_review \
     checkpoint:__hawt_checkpoint \
     sandbox:__hawt_sandbox_run \
+    switch:__hawt_upsert \
     unload:__hawt_do_unload \
     reload:__hawt_do_reload \
     help:__hawt_help
@@ -100,11 +101,8 @@ end
 
 # --- Worktree name completions ---
 
-# Default (upsert) - existing worktrees with branch info
-complete -c hawt -n __fish_use_subcommand -a "(__hawt_complete_worktrees)"
-
 # Subcommands that accept any worktree name
-for sub in cc merge diff rm review checkpoint lock tmp
+for sub in switch cc merge diff rm review checkpoint lock tmp
     complete -c hawt -n "__fish_seen_subcommand_from $sub" -a "(__hawt_complete_worktrees)"
 end
 
@@ -113,8 +111,8 @@ for sub in kill unlock
     complete -c hawt -n "__fish_seen_subcommand_from $sub" -a "(__hawt_complete_locked_worktrees)"
 end
 
-# --from flag (for upsert and cc)
-complete -c hawt -n "not __fish_seen_subcommand_from status clean tmp rm help ps kill lock unlock batch review checkpoint" -l from -s f -d "Base branch/ref" -x -a "(git branch --format='%(refname:short)' 2>/dev/null)"
+# --from flag (for switch and cc)
+complete -c hawt -n "__fish_seen_subcommand_from switch cc" -l from -s f -d "Base branch/ref" -x -a "(git branch --format='%(refname:short)' 2>/dev/null)"
 
 # cc-specific flags
 complete -c hawt -n "__fish_seen_subcommand_from cc" -l task -s t -d "Task description (written to TASK.md)"

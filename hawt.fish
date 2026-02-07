@@ -40,9 +40,12 @@ function hawt --description "Git worktree helper with fzf, bootstrap, and lifecy
             __hawt_do_unload $argv[2..]
         case reload
             __hawt_do_reload
+        case switch sw
+            __hawt_upsert $argv[2..]
         case '*'
-            # Anything else is treated as a worktree name to upsert
-            __hawt_upsert $argv
+            __hawt_error "Unknown command: $subcmd"
+            echo (set_color brblack)"  Run 'hawt help' for usage."(set_color normal) >&2
+            return 1
     end
 end
 
@@ -51,7 +54,7 @@ function __hawt_pick --description "Interactive fzf worktree picker"
     set -l worktrees (git worktree list --porcelain | string replace -rf '^worktree (.+)' '$1')
 
     if test (count $worktrees) -le 1
-        echo (set_color yellow)"No additional worktrees. Use: hawt <name> to create one."(set_color normal)
+        echo (set_color yellow)"No additional worktrees. Use: hawt switch <name> to create one."(set_color normal)
         return 1
     end
 
@@ -338,7 +341,7 @@ function __hawt_help --description "Show help"
     echo (set_color --bold yellow)"  WORKTREE MANAGEMENT "(set_color brblack)(string repeat -n 39 "─")(set_color normal)
     echo ""
     echo "  hawt                              Interactive fzf picker "(set_color brblack)"(ctrl-d to remove)"(set_color normal)
-    echo "  hawt <name> [--from <ref>]        Create or switch to a named worktree"
+    echo "  hawt switch <name> [--from <ref>]  Create or switch to a named worktree"
     echo "  hawt status                       Table view: branch, dirty state, sync, age"
     echo "  hawt tmp [name]                   Ephemeral worktree in /tmp "(set_color brblack)"(auto-cleaned)"(set_color normal)
     echo "  hawt rm <name>                    Remove a worktree"
